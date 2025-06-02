@@ -3,21 +3,17 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from datetime import datetime
-import time
 import os
 
 st.set_page_config(layout="wide")
 st.title("🛸 Drone Incursion Detection Dashboard")
 
+if st.button("🔄 Refresh"):
+    st.rerun()
 
-st.experimental_set_query_params(refresh=str(time.time()))
-st_autorefresh = st.empty()
-st_autorefresh.markdown("⏳ Auto-refreshing every 30 seconds...", unsafe_allow_html=True)
-time.sleep(30)
-
+st.caption(f"Last updated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
 log_file = "data/flight_logs.csv"
-
 
 columns = [
     "icao24", "callsign", "origin_country", "time_position", "last_contact",
@@ -25,7 +21,6 @@ columns = [
     "heading", "vertical_rate", "sensors", "geo_altitude", "squawk",
     "spi", "position_source", "category", "timestamp"
 ]
-
 
 if os.path.exists(log_file):
     df = pd.read_csv(log_file, names=columns)
@@ -37,16 +32,13 @@ df["callsign"] = df["callsign"].fillna("").astype(str)
 df["velocity"] = pd.to_numeric(df["velocity"], errors='coerce')
 df["baro_altitude"] = pd.to_numeric(df["baro_altitude"], errors='coerce')
 
-
 anomalies = df[
     ((df["baro_altitude"] < 1000) & (df["velocity"] < 50)) |
     (df["callsign"].str.strip() == "") |
     (df["category"] == 8)
 ].copy()
 
-
 anomalies.to_csv("data/anomalies_only.csv", index=False)
-
 
 st.sidebar.header("Filter Anomalies")
 
@@ -59,7 +51,6 @@ alt_range = st.sidebar.slider(
 selected_categories = st.sidebar.multiselect(
     "Aircraft Category", options=sorted(anomalies["category"].dropna().unique()), default=None)
 
-
 filtered = anomalies.copy()
 if selected_countries:
     filtered = filtered[filtered["origin_country"].isin(selected_countries)]
@@ -70,15 +61,13 @@ filtered = filtered[
     (filtered["baro_altitude"] <= alt_range[1])
 ]
 
-
 st.subheader("⚠️ Filtered Anomalous Aircraft")
 st.dataframe(filtered[[
-    "icao24", "origin_country", "latitude", "longitude", "baro_altitude", "velocity", "category", "timestamp"
+    "icao24", "origin_country", "latitude", "longitude",
+    "baro_altitude", "velocity", "category", "timestamp"
 ]])
 
-
 st.subheader("📍 Anomaly Map")
-
 m = folium.Map(location=[38.0, -122.0], zoom_start=7)
 
 for _, row in filtered.iterrows():
