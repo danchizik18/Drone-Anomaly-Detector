@@ -23,10 +23,6 @@ def get_access_token(client_id, client_secret):
 def fetch_opensky_data(token):
     url = "https://opensky-network.org/api/states/all"
     params = {
-        "lamin": 37.5,  # CA region
-        "lamax": 39.0,
-        "lomin": -123.0,
-        "lomax": -121.0,
         "extended": 1
     }
     headers = {"Authorization": f"Bearer {token}"}
