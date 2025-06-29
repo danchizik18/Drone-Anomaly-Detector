@@ -45,11 +45,14 @@ st.caption(f"Last updated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
 # --- Load and Validate CSV ---
 try:
     df = pd.read_csv(log_file)
-    if not all(col in df.columns for col in ["callsign", "velocity", "baro_altitude", "latitude", "longitude", "category"]):
-        raise ValueError("Missing required columns in CSV.")
+    required_cols = ["callsign", "velocity", "baro_altitude", "latitude", "longitude", "category"]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        raise KeyError(f"Missing columns in CSV: {missing_cols}")
 except Exception as e:
     st.error(f"Failed to load or parse flight log data: {e}")
     st.stop()
+
 
 # --- Data Cleaning ---
 df["callsign"] = df["callsign"].fillna("").astype(str)
