@@ -31,10 +31,9 @@ if st.button("🔄 Refresh"):
         if data.get("states"):
             df_live = pd.DataFrame(data["states"], columns=columns[:-1])
             df_live["timestamp"] = datetime.utcfromtimestamp(data["time"]).strftime('%Y-%m-%d %H:%M:%S')
-            df_live = df_live[columns]  # Enforce correct column order
+            df_live = df_live[columns]  # Ensure correct column order
             os.makedirs("data", exist_ok=True)
-            df_live.to_csv(log_file, index=False)
-            st.success("Data refreshed successfully.")
+            df_live.to_csv(log_file, index=False)  # ✅ This includes headers by default
         else:
             st.warning("No state data received.")
     except Exception as e:
