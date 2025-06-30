@@ -1,0 +1,10 @@
+icao24,callsign,origin_country,time_position,last_contact,longitude,latitude,baro_altitude,on_ground,velocity,heading,vertical_rate,squawk,spi,position_source,category,other,timestamp,violation_predicted
+a6905d,TWY522  ,United States,1751325042.0,1751325042,-122.3726,37.62,,True,18.52,298.12,,,,4561,False,0,2025-06-30 23:10:45,True
+a99b83,DAL363  ,United States,1751324881.0,1751325016,-122.3827,37.6156,,True,0.9,137.81,,,,,False,0,2025-06-30 23:10:45,True
+71c308,AAR212  ,Republic of Korea,1751325044.0,1751325045,-122.6384,37.8657,4061.46,False,173.5,138.61,-8.45,,4213.86,1173,False,0,2025-06-30 23:10:45,True
+a7dbaa,SKW5913 ,United States,1751325044.0,1751325044,-122.387,37.6211,,True,0.0,219.38,,,,,False,0,2025-06-30 23:10:45,True
+a0cbdf,PXT150  ,United States,1751325042.0,1751325042,-122.3845,37.6276,,True,0.0,284.06,,,,6655,False,0,2025-06-30 23:10:45,True
+aa6b7e,UAL948  ,United States,1751325044.0,1751325044,-122.3938,37.62,,True,5.66,73.12,,,,,False,0,2025-06-30 23:10:45,True
+a57d52,ASA836  ,United States,1751324977.0,1751324977,-122.3799,37.6192,,True,3.09,213.75,,,,4226,False,0,2025-06-30 23:10:45,True
+a56256,EJA446  ,United States,1751325044.0,1751325044,-122.3176,37.5999,251.46,False,63.24,291.97,-2.93,,205.74,5521,False,0,2025-06-30 23:10:45,True
+a5db4e,SKW5693 ,United States,1751324918.0,1751324970,-122.3838,37.6204,,True,10.8,180.0,,,,,False,0,2025-06-30 23:10:45,True

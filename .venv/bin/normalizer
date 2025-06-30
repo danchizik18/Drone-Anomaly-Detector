@@ -1,4 +1,4 @@
-#!/Users/danchizik/Desktop/drone-anamoly-detection/.venv/bin/python3
+#!/Users/danchizik/Desktop/drone-anamoly-detection/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
