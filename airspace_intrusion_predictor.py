@@ -1,30 +1,22 @@
-# airspace_intrusion_predictor.py (no geopandas version)
-
-import requests
 import pandas as pd
-from shapely.geometry import Point, Polygon
+import requests
 from datetime import datetime
+from shapely.geometry import Point, Polygon
+import streamlit as st
+import folium
+from streamlit_folium import st_folium
+import joblib
 import os
 
-# Define restricted airspace polygon (hardcoded)
-# Example: small box near SF Bay Area
-restricted_zones = [
-    Polygon([  # zone 1
-        (-122.5, 37.6),
-        (-122.5, 37.8),
-        (-122.3, 37.8),
-        (-122.3, 37.6),
-        (-122.5, 37.6)
-    ])
-]
+st.set_page_config(layout="wide")
+st.title("🛡️ Airspace Intrusion Detection Dashboard")
 
-# OpenSky public API columns (extended=0)
-columns = [
-    "icao24", "callsign", "origin_country", "time_position", "last_contact",
-    "longitude", "latitude", "baro_altitude", "on_ground", "velocity",
-    "heading", "vertical_rate", "squawk", "spi", "position_source"
+# Define more realistic restricted zones (e.g. military bases or sensitive facilities)
+RESTRICTED_ZONES = [
+    Polygon([(-77.055, 38.85), (-77.035, 38.85), (-77.035, 38.87), (-77.055, 38.87)]),  # Pentagon area
+    Polygon([(-122.39, 37.61), (-122.36, 37.61), (-122.36, 37.63), (-122.39, 37.63)]),  # Near SF Airport
+    Polygon([(-106.49, 35.03), (-106.47, 35.03), (-106.47, 35.05), (-106.49, 35.05)])   # Kirtland AFB
 ]
-
 
 def fetch_opensky_data():
     url = "https://opensky-network.org/api/states/all?extended=0"
@@ -33,8 +25,7 @@ def fetch_opensky_data():
 
     if data.get("states"):
         df = pd.DataFrame(data["states"])
-
-        if df.shape[1] == 17:  # Only rename if exactly 17 columns
+        if df.shape[1] == 17:
             df.columns = [
                 "icao24", "callsign", "origin_country", "time_position", "last_contact",
                 "longitude", "latitude", "baro_altitude", "on_ground", "velocity",
@@ -42,9 +33,8 @@ def fetch_opensky_data():
                 "category", "other"
             ]
         else:
-            print(f"[WARN] Unexpected number of columns: {df.shape[1]}")
-            df.to_csv("opensky_raw_debug.csv", index=False)  # helpful for debugging
-            return pd.DataFrame()  # return empty to avoid downstream errors
+            st.warning(f"[WARN] Unexpected number of columns: {df.shape[1]}")
+            return pd.DataFrame()
 
         df = df.dropna(subset=["latitude", "longitude", "heading"])
         df["timestamp"] = datetime.utcfromtimestamp(data["time"])
@@ -52,57 +42,85 @@ def fetch_opensky_data():
 
     return pd.DataFrame()
 
-
-
-def point_within_zones(lat, lon):
-    point = Point(lon, lat)
-    return any(zone.contains(point) for zone in restricted_zones)
-
-
-def predict_violation(row, minutes_ahead=2):
-    try:
-        from math import radians, cos, sin
-        R = 6371000
-        speed = row["velocity"] or 0
-        heading = row["heading"] or 0
-        lat = row["latitude"]
-        lon = row["longitude"]
-        distance = speed * 60 * minutes_ahead
-
-        heading_rad = radians(heading)
-        lat_rad = radians(lat)
-        lon_rad = radians(lon)
-
-        new_lat = lat + (distance / R) * (180 / 3.14159) * cos(heading_rad)
-        new_lon = lon + (distance / R) * (180 / 3.14159) * sin(heading_rad) / cos(lat_rad)
-
-        return point_within_zones(new_lat, new_lon)
-    except:
-        return False
-
-
 def detect_intrusions(df):
-    df["violation_predicted"] = df.apply(predict_violation, axis=1)
-    return df[df["violation_predicted"] == True]
+    intrusions = []
+    for _, row in df.iterrows():
+        point = Point(row["longitude"], row["latitude"])
+        for zone in RESTRICTED_ZONES:
+            if zone.contains(point):
+                intrusions.append(row)
+                break
 
-
-def log_intrusions(intrusions):
-    if not intrusions.empty:
+    if intrusions:
+        intrusions_df = pd.DataFrame(intrusions)
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        path = f"logs/intrusions_{timestamp}.csv"
         os.makedirs("logs", exist_ok=True)
-        filename = f"logs/intrusions_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
-        intrusions.to_csv(filename, index=False)
-        print(f"[INFO] Logged {len(intrusions)} intrusions to {filename}")
+        intrusions_df.to_csv(path, index=False)
+        return intrusions_df
+    return pd.DataFrame()
 
+def classify_intrusion_risk(df, model_path="ml_model.pkl"):
+    if not os.path.exists(model_path):
+        st.warning("ML model not found. Skipping risk classification.")
+        df["risk_level"] = "unknown"
+        return df
+    try:
+        model = joblib.load(model_path)
+        features = df[["velocity", "heading"]].fillna(0)
+        df["risk_level"] = model.predict(features)
+        return df
+    except Exception as e:
+        st.warning(f"Risk classification skipped due to model error: {e}")
+        df["risk_level"] = "unknown"
+        return df
 
-if __name__ == "__main__":
-    print("[INFO] Fetching live aircraft data from OpenSky...")
-    df = fetch_opensky_data()
-    if df.empty:
-        print("[WARN] No data fetched.")
-    else:
-        print(f"[INFO] Retrieved {len(df)} aircraft.")
-        intrusions = detect_intrusions(df)
-        print(f"[ALERT] Potential restricted zone violations: {len(intrusions)}")
-        if not intrusions.empty:
-            print(intrusions[["icao24", "callsign", "origin_country", "latitude", "longitude", "velocity", "heading", "timestamp"]])
-        log_intrusions(intrusions)
+st.sidebar.markdown("### Controls")
+if st.sidebar.button("🔄 Refresh Data"):
+    st.session_state["df"] = fetch_opensky_data()
+    st.session_state["intrusions"] = detect_intrusions(st.session_state["df"])
+    if not st.session_state["intrusions"].empty:
+        st.session_state["intrusions"] = classify_intrusion_risk(st.session_state["intrusions"])
+
+if "df" not in st.session_state:
+    st.session_state["df"] = pd.DataFrame()
+    st.session_state["intrusions"] = pd.DataFrame()
+
+if not st.session_state["df"].empty:
+    st.write(f"[INFO] Retrieved {len(st.session_state['df'])} aircraft.")
+
+if not st.session_state["intrusions"].empty:
+    st.success(f"[ALERT] Detected {len(st.session_state['intrusions'])} intrusions.")
+    intrusions = st.session_state["intrusions"]
+
+    st.dataframe(intrusions[[
+        "icao24", "callsign", "origin_country", "latitude", "longitude",
+        "velocity", "heading", "risk_level", "timestamp"
+    ]])
+
+    st.subheader("📍 Map View of Intrusions")
+    m = folium.Map(location=[39.5, -98.35], zoom_start=4)
+    for zone in RESTRICTED_ZONES:
+        folium.Polygon(locations=[(lat, lon) for lon, lat in zone.exterior.coords],
+                       color='red', fill=True, fill_opacity=0.1,
+                       tooltip="Restricted Zone").add_to(m)
+
+    for _, row in intrusions.iterrows():
+        try:
+            lat = float(row["latitude"])
+            lon = float(row["longitude"])
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=5,
+                    popup=f"{row['callsign']} ({row['risk_level']})",
+                    color="crimson",
+                    fill=True,
+                    fill_opacity=0.7
+                ).add_to(m)
+        except Exception:
+            continue
+
+    st_folium(m, width=1000, height=550)
+else:
+    st.info("No intrusions detected.")
