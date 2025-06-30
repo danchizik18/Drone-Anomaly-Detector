@@ -1,6 +1,7 @@
-streamlit
 pandas
 requests
+shapely
+streamlit
 folium
 streamlit-folium
-python-dotenv
+joblib
