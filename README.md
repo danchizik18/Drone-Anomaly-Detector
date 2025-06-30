@@ -1,48 +1,39 @@
-# 🛸 Drone Incursion Detection Dashboard
+# 🛡️ Airspace Intrusion Detection Dashboard
 
-This Streamlit-based dashboard detects and visualizes anomalous aircraft activity using real-time data from the [OpenSky Network](https://opensky-network.org/). The tool is designed to support early warning systems and situational awareness for defense, aviation security, and research applications.
+This Streamlit-based dashboard monitors live air traffic over the U.S. using OpenSky data and detects potential intrusions into restricted airspace zones (e.g., military bases, critical infrastructure). A basic ML model can optionally classify intrusions by risk level.
 
-## 🚀 Features
+## 🔍 Features
+- Live aircraft data pulled from the OpenSky Network API
+- Geofencing-based intrusion detection with custom restricted zones
+- ML-based intrusion risk classification (optional)
+- Interactive map and intrusion logs
+- Fully deployable on Streamlit Cloud
 
-- **Live Data Ingestion**: Pulls real-time ADS-B flight data from OpenSky API.
-- **Anomaly Detection**: Flags potential drones or suspicious flights using rule-based heuristics (e.g., low altitude, low velocity, missing callsign, UAV category).
-- **Interactive Map**: Displays anomalies on a live Folium map with popup info.
-- **Custom Filtering**: Sidebar filters by altitude, country of origin, aircraft category, and location bounds.
-- **Category Legend**: In-app legend to explain aircraft classification codes.
-- **Manual Refresh**: User-triggered data refresh to avoid unnecessary API load.
+## 🛠️ Tech Stack
+- **Python**, **Pandas**, **Shapely**, **Folium**
+- **Streamlit** for UI
+- **OpenSky API** for live air traffic data
+- **Joblib** to load optional ML models
 
-## 🧠 Detection Logic
+## 🚀 To Run Locally
+1. Clone the repo
+2. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3. Run the dashboard:
+    ```bash
+    streamlit run airspace_intrusion_predictor.py
+    ```
 
-An aircraft is marked as **anomalous** if any of the following is true:
-- Altitude < 1000 ft **and** Velocity < 50 m/s
-- Missing or blank callsign
-- Aircraft category code equals `8` (UAV)
+## 📁 Logs
+Detected intrusions are saved in the `logs/` directory with timestamps.
 
-## 📍 Map Popups
+## 🤖 ML Model (Optional)
+To use a classifier for `risk_level`, place a `ml_model.pkl` file in the root directory. It should accept `["velocity", "heading"]` as features.
 
-Each anomaly includes:
-- ICAO24 hex address
-- Origin country
-- A link to [ADSBExchange](https://globe.adsbexchange.com) for more info
+## 📦 Deployment
+This app is ready to be deployed to [Streamlit Cloud](https://streamlit.io/cloud) — just connect your GitHub repo and you're live.
 
-## 🔧 Tech Stack
-
-### ⚙️ Backend
-- `Python 3.9+`
-- `requests` – OpenSky API data retrieval
-- `pandas` – Data wrangling and CSV log management
-- `os` / `datetime` – File and time operations
-
-### 🌐 Frontend
-- `Streamlit` – UI framework for interactivity
-- `folium` – Map visualization
-- `streamlit-folium` – Streamlit ↔ Folium integration
-
-## 👨‍💻 Author
-
-**Dan Chizik**  
-📫 danchizik@berkeley.edu | 📍 UC Berkeley — Statistics & Data Science  
-🔗 LinkedIn: https://www.linkedin.com/in/danchizik/ | 🌐 [Project Website: https://danchizikportfolio.netlify.app/
-
-
+---
 
