@@ -33,7 +33,7 @@ Detected intrusions are saved in the `logs/` directory with timestamps.
 To use a classifier for `risk_level`, place a `ml_model.pkl` file in the root directory. It should accept `["velocity", "heading"]` as features.
 
 ## 📦 Deployment
-This app is ready to be deployed to [Streamlit Cloud](https://streamlit.io/cloud) — just connect your GitHub repo and you're live.
+https://airspace-intrusion-detector.streamlit.app/
 
 ---
 
